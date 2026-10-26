@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elixir - Devis Potions</title>
+
+<style>
+body{
+    background:#240046;
+    color:white;
+    font-family:Arial,sans-serif;
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+    color:#e0aaff;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:none;
+    margin-bottom:20px;
+}
+
+.grille{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:10px;
+}
+
+button{
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.potion{
+    background:#7b2cbf;
+    color:white;
+}
+
+.potion:hover{
+    background:#9d4edd;
+}
+
+.panier{
+    margin-top:20px;
+    background:#3c096c;
+    padding:15px;
+    border-radius:10px;
+}
+
+.ligne{
+    display:flex;
+    justify-content:space-between;
+    margin:10px 0;
+}
+
+.action{
+    margin-left:5px;
+    width:30px;
+    height:30px;
+}
+
+#envoyer{
+    width:100%;
+    margin-top:15px;
+    background:#c77dff;
+    font-size:18px;
+}
+</style>
+
+</head>
+<body>
+
+<h1>🔮 Elixir - Devis Potions 🔮</h1>
+
+<input id="pseudo" placeholder="Pseudo Minecraft">
+
+<div class="grille">
+
+<button class="potion" onclick="ajouter('🔥 Résistance au Feu',400)">🔥 Résistance au Feu<br>400 EC</button>
+
+<button class="potion" onclick="ajouter('⚡ Rapidité',400)">⚡ Rapidité<br>400 EC</button>
+
+<button class="potion" onclick="ajouter('🧪 Viscosité',400)">🧪 Viscosité<br>400 EC</button>
+
+<button class="potion" onclick="ajouter('🪶 Chute Lente',500)">🪶 Chute Lente<br>500 EC</button>
+
+<button class="potion" onclick="ajouter('🌊 Respiration Aquatique',500)">🌊 Respiration Aquatique<br>500 EC</button>
+
+<button class="potion" onclick="ajouter('👻 Invisibilité',500)">👻 Invisibilité<br>500 EC</button>
+
+<button class="potion" onclick="ajouter('❤️ Soin',600)">❤️ Soin<br>600 EC</button>
+
+<button class="potion" onclick="ajouter('✨ Régénération',600)">✨ Régénération<br>600 EC</button>
+
+<button class="potion" onclick="ajouter('💪 Force',600)">💪 Force<br>600 EC</button>
+
+<button class="potion" onclick="ajouter('🌙 Vision Nocturne',600)">🌙 Vision Nocturne<br>600 EC</button>
+
+<button class="potion" onclick="ajouter('☠️ Dégâts',700)">☠️ Dégâts<br>700 EC</button>
+
+<button class="potion" onclick="ajouter('🐍 Poison I',700)">🐍 Poison I<br>700 EC</button>
+
+<button class="potion" onclick="ajouter('💀 Faiblesse',700)">💀 Faiblesse<br>700 EC</button>
+
+</div>
+
+<div class="panier">
+
+<h2>🛒 Panier</h2>
+
+<div id="panier"></div>
+
+<h3>Total : <span id="total">0</span> EC</h3>
+
+<button id="envoyer" onclick="envoyerDiscord()">
+📨 Envoyer le devis
+</button>
+
+</div>
+
+<script>
+
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1564076923674566716/LT3Q7_6aJ0Cm0Gk8tuNrAauGGgpP-t_QXYl6yIkD8krddecVVIIkosImmjaz1_pcuqGt";
+
+let panier = [];
+
+function ajouter(nom, prix){
+
+let item = panier.find(p => p.nom === nom);
+
+if(item){
+    item.quantite++;
+}else{
+    panier.push({
+        nom: nom,
+        prix: prix,
+        quantite: 1
+    });
+}
+
+afficher();
+}
+
+function modifier(index,valeur){
+
+panier[index].quantite += valeur;
+
+if(panier[index].quantite <= 0){
+    panier.splice(index,1);
+}
+
+afficher();
+}
+
+function afficher(){
+
+let html = "";
+let total = 0;
+
+panier.forEach((item,index)=>{
+
+let sousTotal = item.prix * item.quantite;
+total += sousTotal;
+
+html += `
+<div class="ligne">
+
+<div>
+${item.nom}
+x${item.quantite}
+= ${sousTotal} EC
+</div>
+
+<div>
+<button class="action" onclick="modifier(${index},1)">+</button>
+<button class="action" onclick="modifier(${index},-1)">-</button>
+</div>
+
+</div>
+`;
+});
+
+document.getElementById("panier").innerHTML = html;
+document.getElementById("total").textContent = total;
+}
+
+async function envoyerDiscord(){
+
+let pseudo = document.getElementById("pseudo").value;
+
+if(!pseudo){
+    alert("Entre ton pseudo Minecraft");
+    return;
+}
+
+let message = "";
+
+let total = 0;
+
+panier.forEach(item=>{
+
+let sousTotal = item.prix * item.quantite;
+total += sousTotal;
+
+message += `${item.nom} x${item.quantite} = ${sousTotal} EC\n`;
+
+});
+
+try{
+
+await fetch(WEBHOOK_URL,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+content:
+`🔮 NOUVEAU DEVIS ELIXIER
+
+👤 Joueur : ${pseudo}
+
+${message}
+
+💰 Total : ${total} EC`
+})
+});
+
+alert("✅ Devis envoyé sur Discord");
+
+}catch(e){
+
+alert("❌ Erreur d'envoi");
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
